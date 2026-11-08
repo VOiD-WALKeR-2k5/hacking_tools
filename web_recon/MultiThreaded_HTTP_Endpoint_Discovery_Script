@@ -1,48 +1,33 @@
-import requests 
+import requests
 from concurrent.futures import ThreadPoolExecutor
 
-# Get user inputs
-target_url = input('Enter the target URL (e.g., http://example.com): ').strip()
-file_name = input('Enter name of the file containing directories: ').strip()
+target_url = input('enter the target url: ')
+file_name = input('enter name of the file containing directories: ')
+file = open(file_name, 'r')
 
-# Define status codes you actually care about seeing
+# Define the HTTP status codes you want to filter for
 VALID_STATUS_CODES = {200, 301, 302, 403, 401}
 
-def check_directory(dir_name):
-    dir_name = dir_name.strip()
-    # Skip empty lines or comments
-    if not dir_name or dir_name.startswith('#'):
-        return
-
-    full_url = f"{target_url.rstrip('/')}/{dir_name}"
-    
+def request(url):
     try:
-        # allow_redirects=False helps catch 301/302 redirects explicitly
-        response = requests.get(full_url, timeout=5, allow_redirects=False)
-        
-        # Filter check: Only print if the status code is in our target set
-        if response.status_code in VALID_STATUS_CODES:
-            print(f"[+] Found ({response.status_code}): {full_url}")
-            
-    except requests.exceptions.RequestException:
-        # Silently pass connection errors, timeouts, or DNS failures
+        # allow_redirects=False helps catch hidden redirects explicitly
+        return requests.get('http://' + url, allow_redirects=False)
+    except requests.exceptions.ConnectionError:
         pass
 
-def main():
-    try:
-        with open(file_name, 'r') as file:
-            directories = file.readlines()
-    except FileNotFoundError:
-        print(f"[-] Error: The file '{file_name}' was not found.")
+def check_path(line):
+    dir = line.strip()
+    if not dir or dir.startswith('#'):
         return
+    full_url = target_url + '/' + dir
+    response = request(full_url)
+    
+    # Filter response: Only print if response exists and status code is in our valid set
+    if response and response.status_code in VALID_STATUS_CODES:
+        print(f'discovered directory at the path: {full_url} [Status: {response.status_code}]')
 
-    print(f"\n[*] Starting scan on {target_url} using 10 concurrent threads...\n")
+# Run the file lines concurrently using 10 worker threads
+with ThreadPoolExecutor(max_workers=10) as executor:
+    executor.map(check_path, file)
 
-    # ThreadPoolExecutor handles running multiple requests simultaneously
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        executor.map(check_directory, directories)
-
-    print("\n[*] Scan complete.")
-
-if __name__ == '__main__':
-    main()
+file.close()
