@@ -43,14 +43,19 @@ hacking_tools/
 ├── README.md
 │
 ├── web_recon/
-│   ├── directory_discovery.py
+│   ├── MultiThreaded_HTTP_Endpoint_Discovery_Script.py
+│   ├── required_python_libs.txt
 │   └── README.md
 │
+├── lab_research/
+│   └── ICO File Masquerading/
+│       └── README.md
+│   └── reverse_shell_handler/
+│       └── README.md
+│
+├── tools/
+│
 ├── network_scanning/
-│
-├── web_security/
-│
-├── utilities/
 │
 └── .gitignore
 ```
